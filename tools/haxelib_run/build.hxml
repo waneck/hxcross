@@ -1,0 +1,4 @@
+-cp src
+-main HaxelibRun
+-lib mcli
+-neko ../../run.n
