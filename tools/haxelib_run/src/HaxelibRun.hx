@@ -38,14 +38,13 @@ class HaxelibRun extends mcli.CommandLine
 	 **/
 	public function setup(d:mcli.Dispatch)
 	{
-		if (d.args.length != 0) throw 'Invalid arguments: ${d.args.join(" ")}';
+		if (d.args.length != 0) throw '`setup` takes no arguments, but some were used: ${d.args.join(" ")}';
 
 		// compile hxcross
 		Sys.setCwd(Sys.getCwd()+'tools/helper');
 		var res = Sys.command('haxe',['build.hxml']);
 		if (res != 0) Sys.exit(res);
-		if (Sys.command('sudo',['cp','bin/Main','$prefix/bin/hxcross']) != 0) Sys.exit(1);
+		if (Sys.command('sudo',['cp','bin/Main-debug','$prefix/bin/hxcross']) != 0) Sys.exit(1);
 		Sys.println("Setup complete!");
-
 	}
 }

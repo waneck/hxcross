@@ -1,4 +1,6 @@
 -cp src
 -cpp bin
 -lib mcli
+-lib hxcpp
 -main Main
+-debug
