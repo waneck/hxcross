@@ -49,6 +49,7 @@ class Main extends mcli.CommandLine
 
 	/**
 		Installs a sdk with `sdkname` that is currently at `path`. Will try to auto-detect the format and install it into the correct sdk path.
+		If no `sdkname` is provided, auto-dectetion will be performed
 	 **/
 	public function installSdk(path:String, ?sdkname:String)
 	{
