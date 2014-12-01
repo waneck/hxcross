@@ -106,6 +106,12 @@ class Main extends mcli.CommandLine
 		switch(regex.matched(1))
 		{
 			case 'ios' | 'iphone' | 'iphoneos':
+				switch (arch)
+				{
+					case 'x86' | 'sim' | 'i686' | 'i586' | 'i486' | 'i386':
+						arch = 'i386';
+					case _:
+				}
 				var triple = 'arm-apple-darwin11-';
 				return { name:'ios', ver:ver, triple:triple };
 			case 'mac' | 'osx':
