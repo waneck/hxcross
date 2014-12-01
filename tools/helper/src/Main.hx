@@ -26,7 +26,9 @@ class Main extends Cli
 	}
 
 	/**
-		Builds and installs a specific cross-compiler. Run `hxcross install --help` to see all options
+		Builds and installs a specific cross-compiler.
+
+		@more Run `hxcross install --help` to see all options
 	 **/
 	public function install(d:mcli.Dispatch)
 	{
@@ -71,7 +73,7 @@ class Main extends Cli
 
 	/**
 		Sets the Mac/iOs SDK to use.
-		Examples of valid values are `iphone4.2`, `ios7`, `mac10.8-i386`, `osx10.9-x86_64`, `mingw-i386`
+		@more Examples of valid values are `iphone4.2`, `ios7`, `mac10.8-i386`, `osx10.9-x86_64`, `mingw-i386`
 	 **/
 	public var sdk:String = "ios";
 
@@ -84,8 +86,10 @@ class Main extends Cli
 	}
 
 	/**
-		Installs a sdk with `sdkname` that is currently at `path`. Will try to auto-detect the format and install it into the correct sdk path.
-		If no `sdkname` is provided, auto-dectetion will be performed
+		Installs a sdk with `sdkname` that is currently at `path`.
+
+		@more Will try to auto-detect the format and install it into the correct sdk path.
+		      If no `sdkname` is provided, auto-detection will be performed
 	 **/
 	public function installSdk(path:String, ?sdkname:String)
 	{

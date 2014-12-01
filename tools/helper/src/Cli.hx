@@ -9,19 +9,19 @@ class Cli extends mcli.CommandLine
 	public var yes:Bool;
 
 	/**
-		Forces any interactive question to be answered by its default answer
+		Forces any interactive question to be as default
 		@alias f
 	 **/
 	public var force:Bool;
 
 	/**
-		Enhances the verbosity level of the application
+		Enhances the verbosity level
 		@alias v
 	 **/
 	public var verbose:Bool;
 
 	/**
-		Diminishes the verbosity level of the application
+		Diminishes the verbosity level
 		@alias q
 	 **/
 	public var quiet:Bool;
