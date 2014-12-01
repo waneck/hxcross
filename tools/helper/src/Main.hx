@@ -2,10 +2,11 @@ import hxcpp.StaticStd;
 import hxcpp.StaticZlib;
 import hxcpp.StaticRegexp;
 
+using StringTools;
 /**
 	Helper to install and run cross-compilers from Haxe.
  **/
-class Main extends mcli.CommandLine
+class Main extends Cli
 {
 	static function main()
 	{
@@ -25,19 +26,6 @@ class Main extends mcli.CommandLine
 	}
 
 	/**
-		Sets the Mac/iOs SDK to use. Examples of valid values are `iphone4.2`, `ios7`, `mac10.8-i386`, `osx10.9-x86_64`
-	 **/
-	public var sdk:String = "ios";
-
-	/**
-		Lists all currently installed SDKs
-		@alias l
-	 **/
-	public function list()
-	{
-	}
-
-	/**
 		Builds and installs a specific cross-compiler. Run `hxcross install --help` to see all options
 	 **/
 	public function install(d:mcli.Dispatch)
@@ -48,14 +36,6 @@ class Main extends mcli.CommandLine
 	}
 
 	/**
-		Installs a sdk with `sdkname` that is currently at `path`. Will try to auto-detect the format and install it into the correct sdk path.
-		If no `sdkname` is provided, auto-dectetion will be performed
-	 **/
-	public function installSdk(path:String, ?sdkname:String)
-	{
-	}
-
-	/**
 		Runs a command using the sdk specified
 	 **/
 	public function run(d:mcli.Dispatch)
@@ -63,10 +43,11 @@ class Main extends mcli.CommandLine
 		var info = sdkInfo(sdk),
 			triple = info.triple;
 		var args = d.args.splice(0,d.args.length);
+		args.reverse();
 		switch (args[0])
 		{
 			case null:
-				Sys.stderr().writeString('hxcross run: Missing argument');
+				Sys.stderr().writeString('hxcross run: Missing argument\n');
 				Sys.exit(3);
 			case 'clang' | 'clang++':
 				// check arguments:
@@ -85,6 +66,29 @@ class Main extends mcli.CommandLine
 			case _:
 				Sys.exit(Sys.command(args.shift(),args));
 		}
+	}
+
+
+	/**
+		Sets the Mac/iOs SDK to use.
+		Examples of valid values are `iphone4.2`, `ios7`, `mac10.8-i386`, `osx10.9-x86_64`, `mingw-i386`
+	 **/
+	public var sdk:String = "ios";
+
+	/**
+		Lists all currently installed SDKs
+		@alias l
+	 **/
+	public function list()
+	{
+	}
+
+	/**
+		Installs a sdk with `sdkname` that is currently at `path`. Will try to auto-detect the format and install it into the correct sdk path.
+		If no `sdkname` is provided, auto-dectetion will be performed
+	 **/
+	public function installSdk(path:String, ?sdkname:String)
+	{
 	}
 
 	private static function sdkInfo(sdk:String):SdkInfo
@@ -110,10 +114,11 @@ class Main extends mcli.CommandLine
 				{
 					case 'x86' | 'sim' | 'i686' | 'i586' | 'i486' | 'i386':
 						arch = 'i386';
-					case _:
+					case _ if (arch == '' || arch == null || arch.startsWith('arm')):
+						arch = 'arm';
 				}
-				var triple = 'arm-apple-darwin11-';
-				return { name:'ios', ver:ver, triple:triple };
+				return { name:'ios', ver:ver, triple:'$arch-apple-darwin11-', arch:arch };
+
 			case 'mac' | 'osx':
 				if (arch == null || arch == '')
 					arch = 'x86_64';
@@ -125,7 +130,8 @@ class Main extends mcli.CommandLine
 						arch = 'x86_64';
 					case _:
 				}
-				return { name:'mac', ver:ver, triple:'$arch-apple-darwin11-' };
+				return { name:'mac', ver:ver, triple:'$arch-apple-darwin11-', arch:arch };
+
 			case _:
 				throw 'Unrecognized SDK: $sdk . Valid values are: `ios`,`mac` and `windows`';
 		}
