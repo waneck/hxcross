@@ -1,3 +1,4 @@
+import sys.FileSystem.*;
 /**
 
 .	██╗  ██╗██╗  ██╗ ██████╗██████╗  ██████╗ ███████╗███████╗
@@ -34,7 +35,7 @@ class HaxelibRun extends mcli.CommandLine
 	public var prefix:String = '/usr';
 
 	/**
-		Setups the hxcross command-line tool into path. After setup is complete, the `hxcross` command-line tool will be available in your path
+		Setups the hxcross command-line tool into path. After setup is complete, the `hxcross` command-line tool will be available
 	 **/
 	public function setup(d:mcli.Dispatch)
 	{
@@ -42,9 +43,11 @@ class HaxelibRun extends mcli.CommandLine
 
 		// compile hxcross
 		Sys.setCwd(Sys.getCwd()+'tools/helper');
-		var res = Sys.command('haxe',['build.hxml']);
+		var res = Sys.command('haxe',['build.hxml','-D','HXCROSS_PREFIX=$prefix']);
 		if (res != 0) Sys.exit(res);
-		if (Sys.command('sudo',['cp','bin/Main-debug','$prefix/bin/hxcross']) != 0) Sys.exit(1);
+
+		// install hxcross
+		if (Sys.command('../scripts/do_with_dir.sh',['$prefix/bin','cp','bin/Main-debug','$prefix/bin/hxcross']) != 0) Sys.exit(1);
 		Sys.println("Setup complete!");
 	}
 }
