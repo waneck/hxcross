@@ -16,18 +16,7 @@ class Main extends Cli
 	static function main()
 	{
 		var args = Sys.args();
-		var callPath = null;
-		if (Sys.getEnv("HAXELIB_RUN") != null)
-			callPath = args.pop();
-
-		new mcli.Dispatch(args).dispatch(new Main(callPath));
-	}
-
-	private var callPath:Null<String>;
-	public function new(callPath)
-	{
-		super();
-		this.callPath = callPath;
+		new mcli.Dispatch(args).dispatch(new Main());
 	}
 
 	/**
@@ -87,10 +76,14 @@ class Main extends Cli
 					}
 				}
 
+				if (verbose && args.indexOf('-v') < 0)
+				{
+					add.push('-v');
+				}
+
 				var clangLocation = this.call('which',['clang']);
 				if (clangLocation.exit == 0)
 				{
-					// var ver = new Tools(this).clangVersion();
 					var location = Path.directory(clangLocation.out.trim());
 					var include = '$location/../include/clang';
 					if (exists(include))
@@ -155,6 +148,14 @@ class Main extends Cli
 	{
 		for (sdk in getSdks())
 			Sys.println(sdk);
+	}
+
+	/**
+		Prints the prefix where hxcross was installed
+	 **/
+	public function printPrefix()
+	{
+		Sys.print( prefix );
 	}
 
 	static private function getSdks():Array<String>
@@ -277,11 +278,58 @@ class Main extends Cli
 		if (ret.ver == null)
 		{
 			ret.ver = getDefaultVer(ret.name);
+		} else if (!exists('$prefix/share/${ret.name}${ret.ver}.sdk')) {
+			var ver = Std.parseFloat(ret.ver);
+			if (Math.isNaN(ver))
+			{
+				ret.ver = getDefaultVer(ret.name);
+			} else {
+				var best = null,
+					bestVer = Math.POSITIVE_INFINITY;
+				for (sdk in getSdks())
+				{
+					if (sdk.startsWith(ret.name))
+					{
+						var v = Std.parseFloat(sdk.substr(ret.name.length));
+						if (v >= ver && v < bestVer)
+						{
+							best = sdk.substr(ret.name.length);
+							bestVer = v;
+						}
+					}
+				}
+				ret.ver = best;
+			}
+		}
+
+		if (ret.ver == null)
+		{
+			warn('No installed SDK was found for ${ret.name}! Please install one with `hxcross --install-sdk`');
+			Sys.exit(5);
 		}
 
 		// check triple
+		var v = ret.ver.split('.');
+		var darwinVer = switch [ ret.name, Std.parseInt(v[0]), v[1] == null ? 0 : Std.parseInt(v[1]) ] {
+			case ['MacOSX', 10, ver] if (ver <= 7):
+				11;
+			case ['MacOSX', 10, 8]:
+				12;
+			case ['MacOSX', 10, 9]:
+				13;
+			case ['MacOSX', 10, _]:
+				14;
+			case ['iPhoneOS', ver, _] if (ver <= 5):
+				11;
+			case ['iPhoneOS', 6, _]:
+				13;
+			case ['iPhoneOS', _, _]:
+				14;
+			case _:
+				14;
+		};
 		var found = false;
-		for (val in ['','11','12','13','14','15','16','17'])
+		for (val in ['',darwinVer+''])
 		{
 			if (this.cbool('which',[ret.triple+val+'-ar']))
 			{
@@ -290,6 +338,7 @@ class Main extends Cli
 				break;
 			}
 		}
+
 		if (!found)
 		{
 			errln('Cannot find a valid binutils toolchain for ${ret.triple}. Please install it before using hxcross with this target');

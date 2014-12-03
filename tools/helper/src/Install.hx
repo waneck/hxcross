@@ -25,7 +25,7 @@ class Install extends mcli.CommandLine
 		if (clangVer == null)
 		{
 			cli.warn('No clang version was detected! This installation may fail');
-		} else if (clangVer < 3.2) {
+		} else if (Std.parseFloat(clangVer) < 3.2) {
 			cli.warn('Your clang version ($clangVer) is too old. This installation may fail');
 		}
 	}

@@ -156,7 +156,12 @@ class Cli extends mcli.CommandLine
 	@:skip public function tmpdir()
 	{
 		// first option
-		var ret = call('mktemp',['-d']);
+		var ret = if (Sys.getEnv("TMPDIR") == null)
+			{
+				call('mktemp',['-d']);
+			} else {
+				call('mktemp',['-d','--tmpdir=${Sys.getEnv("TMPDIR")}']);
+			};
 		if (ret.exit == 0)
 		{
 			return ret.out.trim();

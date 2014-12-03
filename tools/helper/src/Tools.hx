@@ -9,12 +9,12 @@ class Tools
 		this.cli = cli;
 	}
 
-	public function clangVersion():Null<Float>
+	public function clangVersion():Null<String>
 	{
 		var regex = ~/clang version (\d+)\.(\d+)/;
 		var proc = cli.call('clang',['-v']);
 		if (regex.match(proc.out))
-			return Std.parseFloat(regex.matched(1) + "." + regex.matched(2));
+			return regex.matched(1) + "." + regex.matched(2);
 		return null;
 	}
 

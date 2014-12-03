@@ -3,9 +3,9 @@
 <echo value="Using cross-ios SDK ${IPHONE_VER}" if="VERBOSE"/>
 <set name="HXCPP_ARM64" if="HXCPP_M64" />
 
-<set name="ARCH" value ="-v7" if="HXCPP_ARMV7" />
-<set name="ARCH" value ="-v7s" if="HXCPP_ARMV7S" />
-<set name="ARCH" value ="-64" if="HXCPP_ARM64" />
+<set name="ARCH" value ="v7" if="HXCPP_ARMV7" />
+<set name="ARCH" value ="v7s" if="HXCPP_ARMV7S" />
+<set name="ARCH" value ="64" if="HXCPP_ARM64" />
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
 
@@ -14,15 +14,21 @@
 	<path name="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/usr/bin" />
 	<set name="SDK_ROOT" value="${DEVELOPER_DIR}/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${IPHONE_VER}.sdk" />
 </section>
-<section unless="mac">
-	<set name="CXX" value="haxelib run cross-ios --sdk iphoneos${IPHONE_VER} run g++" if="HXCPP_GCC" />
-	<set name="CXX" value="haxelib run cross-ios --sdk iphoneos${IPHONE_VER} run clang++" unless="HXCPP_GCC" />
-	<set name="CC" value="haxelib run cross-ios --sdk iphoneos${IPHONE_VER} run gcc" if="HXCPP_GCC" />
-	<set name="CC" value="haxelib run cross-ios --sdk iphoneos${IPHONE_VER} run clang" unless="HXCPP_GCC" />
 
-	<set name="HXCPP_STRIP" value="haxelib run cross-ios --sdk iphoneos${IPHONE_VER} run strip" unless="HXCPP_STRIP" />
-	<set name="HXCPP_AR" value="haxelib run cross-ios --sdk iphoneos${IPHONE_VER} run ar" unless="HXCPP_AR" />
-	<set name="HXCPP_RANLIB" value="haxelib run cross-ios --sdk iphoneos${IPHONE_VER} run ranlib" unless="HXCPP_RANLIB" />
+<set name="VERBOSE_FLAG" value="-v " if="HXCROSS_VERBOSE" />
+<section unless="mac">
+	<section unless="CXX">
+		<set name="CXX" value="hxcross ${VERBOSE_FLAG}--sdk iphoneos${IPHONE_VER} run g++" if="HXCPP_GCC" />
+		<set name="CXX" value="hxcross ${VERBOSE_FLAG}--sdk iphoneos${IPHONE_VER} run clang++" unless="HXCPP_GCC" />
+	</section>
+	<section unless="CC">
+		<set name="CC" value="hxcross ${VERBOSE_FLAG}--sdk iphoneos${IPHONE_VER} run gcc" if="HXCPP_GCC" />
+		<set name="CC" value="hxcross ${VERBOSE_FLAG}--sdk iphoneos${IPHONE_VER} run clang" unless="HXCPP_GCC" />
+	</section>
+
+	<set name="HXCPP_STRIP" value="hxcross ${VERBOSE_FLAG}--sdk iphoneos${IPHONE_VER} run strip" unless="HXCPP_STRIP" />
+	<set name="HXCPP_AR" value="hxcross ${VERBOSE_FLAG}--sdk iphoneos${IPHONE_VER} run ar" unless="HXCPP_AR" />
+	<set name="HXCPP_RANLIB" value="hxcross ${VERBOSE_FLAG}--sdk iphoneos${IPHONE_VER} run ranlib" unless="HXCPP_RANLIB" />
 </section>
 
 <include name="toolchain/gcc-toolchain.xml"/>
@@ -44,11 +50,25 @@
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-g" if="debug"/>
   <flag value="-O2" unless="debug"/>
-  <flag value="-arch"/>
-  <flag value="armv6" if="HXCPP_ARMV6" />
-  <flag value="armv7" if="HXCPP_ARMV7" />
-  <flag value="armv7s" if="HXCPP_ARMV7S" />
-  <flag value="arm64" if="HXCPP_ARM64" />
+
+  <flag value="-arch" if="ARCH"/>
+	<flag value="arm${ARCH}" if="ARCH" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="armv6" if="HXCPP_ALL_ARCHS" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="armv7" if="HXCPP_ALL_ARCHS" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="armv7s" if="HXCPP_ALL_ARCHS" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="arm64" if="HXCPP_ALL_ARCHS" />
+
+  <flag value="-arch" if="HXCPP_ALL_ARCHS32"/>
+  <flag value="armv6" if="HXCPP_ALL_ARCHS32" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS32"/>
+  <flag value="armv7" if="HXCPP_ALL_ARCHS32" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS32"/>
+  <flag value="armv7s" if="HXCPP_ALL_ARCHS32" />
+
   <flag value="-isysroot" if="mac"/>
 	<flag value="${SDK_ROOT}" if="mac"/>
   <!-- <flag value="-miphoneos-version-min=3.0" if="HXCPP_GCC" unless="HXCPP_ARMV7" />
@@ -78,7 +98,7 @@
 
   <outflag value="-o"/>
   <ext value=".o"/>
-  <objdir value="obj/iphoneos${OBJGCC}${OBJDBG}${ARCH}/" />
+  <objdir value="obj/iphoneos${OBJGCC}${OBJDBG}-${ARCH}/" />
 </compiler>
 
 <linker id="dll" exe="g++" >
@@ -88,11 +108,25 @@
   <flag value="-stdlib=libstdc++" if="FORCE_LIBGCC" />
   <flag value="-stdlib=libc++" if="HXCPP_CPP11" />
   <flag value="-dynamiclib"/>
-  <flag value="-arch"/>
-  <flag value="armv6" if="HXCPP_ARMV6" />
-  <flag value="armv7" if="HXCPP_ARMV7" />
-  <flag value="armv7s" if="HXCPP_ARMV7S" />
-  <flag value="arm64" if="HXCPP_ARM64" />
+
+  <flag value="-arch" if="ARCH"/>
+	<flag value="arm${ARCH}" if="ARCH" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="armv6" if="HXCPP_ALL_ARCHS" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="armv7" if="HXCPP_ALL_ARCHS" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="armv7s" if="HXCPP_ALL_ARCHS" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="arm64" if="HXCPP_ALL_ARCHS" />
+
+  <flag value="-arch" if="HXCPP_ALL_ARCHS32"/>
+  <flag value="armv6" if="HXCPP_ALL_ARCHS32" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS32"/>
+  <flag value="armv7" if="HXCPP_ALL_ARCHS32" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS32"/>
+  <flag value="armv7s" if="HXCPP_ALL_ARCHS32" />
+
   <flag value="-isysroot" if="mac"/>
 	<flag value="${SDK_ROOT}" if="mac"/>
   <flag value="-Wl,-undefined,dynamic_lookup"/>
@@ -104,14 +138,35 @@
 </linker>
 
 <linker id="exe" exe="g++">
-  <exe name="haxelib run cross-ios --sdk iphoneos${IPHONE_VER} run clang++" unless="mac" />
-  <exe name="haxelib run cross-ios --sdk iphoneos${IPHONE_VER} run g++" if="HXCPP_GCC" />
+	<exe name="${CXX}" if="CXX" />
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} g++" if="MAC_GCC" />
   <exe name="xcrun --sdk iphoneos${IPHONE_VER} clang++" if="mac" />
+
+  <flag value="-arch" if="ARCH"/>
+	<flag value="arm${ARCH}" if="ARCH" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="armv6" if="HXCPP_ALL_ARCHS" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="armv7" if="HXCPP_ALL_ARCHS" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="armv7s" if="HXCPP_ALL_ARCHS" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS"/>
+  <flag value="arm64" if="HXCPP_ALL_ARCHS" />
+
+  <flag value="-arch" if="HXCPP_ALL_ARCHS32"/>
+  <flag value="armv6" if="HXCPP_ALL_ARCHS32" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS32"/>
+  <flag value="armv7" if="HXCPP_ALL_ARCHS32" />
+  <flag value="-arch" if="HXCPP_ALL_ARCHS32"/>
+  <flag value="armv7s" if="HXCPP_ALL_ARCHS32" />
+
+  <flag value="-framework"/>
+  <flag value="Foundation"/>
+  <flag value="-framework"/>
+	<flag value="QuartzCore"/> <!-- this is needed because of Date.now() -->
   <!-- <exe name="${CXX}" if="CXX" /> -->
   <fromfile value="" if="GCC_OLD" />
   <flag value="-debug" if="debug"/>
-  <flag value="-rdynamic"/>
   <flag value="-m32" unless="HXCPP_M64"/>
   <flag value="-m64" if="HXCPP_M64"/>
   <lib name="-ldl"/>

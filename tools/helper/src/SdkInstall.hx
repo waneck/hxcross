@@ -71,15 +71,12 @@ class SdkInstall
 				}
 			}
 		}
-		throw '';
 	}
 
 	private function addSdk(path:String,name:String,ask:Bool)
 	{
 		if (ask && !cli.ask('Install SDK $name?',true))
 			return true;
-		trace('adding sdk',path,name);
-		trace (stat(path).uid);
 		var prefix = Main.prefix;
 		var needsSudo = stat(prefix).uid == 0;
 		inline function call(cmd,args):Bool
