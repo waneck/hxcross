@@ -5,18 +5,35 @@ class Tools
 {
 	public var cli(default,null):Cli;
 
+	@:isVar public var packman(get,null):{ cmd:String, instargs:Array<String> };
+
 	public function new(cli)
 	{
 		this.cli = cli;
 	}
 
-	public function clangVersion():Null<String>
+	private function get_packman()
 	{
-		var regex = ~/clang version (\d+)\.(\d+)/;
-		var proc = cli.call('clang',['-v']);
-		if (regex.match(proc.out))
-			return regex.matched(1) + "." + regex.matched(2);
-		return null;
+		if (packman == null)
+		{
+			if (exists('/etc/debian_version')) //apt-get
+			{
+				packman = { cmd: 'apt-get', instargs:['install','-y'] };
+			} else if (exists('/etc/redhat-release')) { //yum
+				packman = { cmd: 'yum', instargs:['install'] };
+			} else if (exists('/etc/arch-release')) { //pacman
+				packman = { cmd: 'pacman', instargs:['-S'] };
+			} else if (exists('/etc/gentoo-release')) { //emerge
+				packman = { cmd: 'emerge', instargs:[] };
+			} else if (exists('/etc/SuSE-release')) { //zypp
+				packman = { cmd: 'zypp', instargs:['install'] };
+			} else {
+				// check for apt-get anyway
+				packman = { cmd: 'apt-get', instargs:['install','-y'] };
+			}
+		}
+
+		return packman;
 	}
 
 	public function install(name:String, packNames:Map<String,Array<String>>)
@@ -25,33 +42,10 @@ class Tools
 		if (packNames != null)
 		{
 			cli.msg('The library $name is not installed. hxcross will try to install it automatically. Please follow the instructions if needed');
-			if (exists('/etc/debian_version')) //apt-get
-			{
-				var libs = packNames['apt-get'];
-				if (libs == null) libs = packNames['default'];
-				if (libs != null) ret = cli.call('sudo',['apt-get','install','-y'].concat(libs));
-			} else if (exists('/etc/redhat-release')) { //yum
-				var libs = packNames['yum'];
-				if (libs == null) libs = packNames['default'];
-				if (libs != null) ret = cli.call('sudo',['yum','install'].concat(libs));
-			} else if (exists('/etc/arch-release')) { //pacman
-				var libs = packNames['pacman'];
-				if (libs == null) libs = packNames['default'];
-				if (libs != null) ret = cli.call('sudo',['pacman','-S'].concat(libs));
-			} else if (exists('/etc/gentoo-release')) { //emerge
-				var libs = packNames['emerge'];
-				if (libs == null) libs = packNames['default'];
-				if (libs != null) ret = cli.call('sudo',['emerge'].concat(libs));
-			} else if (exists('/etc/SuSE-release')) { //zypp
-				var libs = packNames['zypp'];
-				if (libs == null) libs = packNames['default'];
-				if (libs != null) ret = cli.call('sudo',['zypper','install'].concat(libs));
-			} else {
-				// check for apt-get anyway
-				var libs = packNames['apt-get'];
-				if (libs == null) libs = packNames['default'];
-				if (libs != null) ret = cli.call('sudo',['apt-get','install','-y'].concat(libs));
-			}
+			var packman = packman;
+			var libs = packNames[packman.cmd];
+			if (libs == null) libs = packNames['default'];
+			if (libs != null) ret = cli.call('sudo',[packman.cmd].concat(packman.instargs).concat(libs));
 		}
 		if (ret != null && ret.exit == 0)
 			return;

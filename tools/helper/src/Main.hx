@@ -6,8 +6,10 @@ import hxcpp.StaticRegexp;
 #end
 
 import sys.FileSystem.*;
+import apps.*;
 
 using StringTools;
+using Lambda;
 /**
 	Helper to install and run cross-compilers from Haxe.
  **/
@@ -29,7 +31,7 @@ class Main extends Cli
 	{
 		// check
 		// clone repo ( https://github.com/tpoechtrager/cctools-port )
-		d.dispatch(new Install(this, new Tools(this)));
+		// d.dispatch(new Install(this, new Tools(this)));
 	}
 
 	/**
@@ -99,22 +101,29 @@ class Main extends Cli
 					}
 				}
 
-				var clangLocation = this.call('which',['clang']);
-				if (clangLocation.exit == 0)
-				{
-					var location = Path.directory(clangLocation.out.trim());
-					var include = '$location/../include/clang';
-					if (exists(include))
-					{
-						var dir = readDirectory(include);
-						var path = if (dir.length == 1)
-							dir[0];
-						else
-							new Tools(this).clangVersion()+'';
-						add.push('-I');
-						add.push('$include/$path/include');
-					}
-				}
+				add.push('-I');
+				add.push(this.clang.clangInclude + '/include');
+				// var clangLocation = this.call('which',['clang']);
+				// if (clangLocation.exit == 0)
+				// {
+				// 	var location = Path.directory(clangLocation.out.trim());
+				// 	var include = '$location/../include/clang';
+				// 	if (exists(include))
+				// 	{
+				// 		var dir = readDirectory(include);
+				// 		var path = if (dir.length == 1) {
+				// 			dir[0];
+				// 		} else {
+				// 			var ver = new Clang(this).version;
+				// 			if (dir.indexOf(ver) >= 0)
+				// 				ver;
+				// 			else
+				// 				dir.find(function(v2) return Std.parseFloat(v2) == Std.parseFloat(ver));
+				// 		}
+				// 		add.push('-I');
+				// 		add.push('$include/$path/include');
+				// 	}
+				// }
 
 			case 'ar' | 'as' | 'strip' | 'ranlib'
 				| 'checksyms' | 'codesign_allocate' | 'dyldinfo'
@@ -209,7 +218,7 @@ class Main extends Cli
 	{
 		// if (!exists(path)) throw 'Path $path does not exist';
 
-		new SdkInstall(new Tools(this)).install(path,sdkname);
+		new SdkInstall(this.tools).install(path,sdkname);
 	}
 
 	private function sdkInfo(sdk:String):SdkInfo
@@ -251,7 +260,7 @@ class Main extends Cli
 					if (env != null)
 						ver = env;
 				}
-				{ name:'iPhoneOS', ver:ver, triple:'$archTriple-apple-darwin', arch:arch };
+				{ name:'iPhoneOS', ver:ver, triple:'$archTriple-apple-darwin', arch:arch, sysroot:null };
 
 			case 'iphonesimulator' | 'iphonesim':
 				if (ver == null)
@@ -260,7 +269,7 @@ class Main extends Cli
 					if (env != null)
 						ver = env;
 				}
-				{ name:'iPhoneSimulator', ver:ver, triple:'i386-apple-darwin', arch:arch };
+				{ name:'iPhoneSimulator', ver:ver, triple:'i386-apple-darwin', arch:arch, sysroot:null };
 
 			case 'mac' | 'osx' | 'macos' | 'macosx':
 				if (arch == null || arch == '')
@@ -280,7 +289,7 @@ class Main extends Cli
 					if (env != null)
 						ver = env;
 				}
-				{ name:'MacOSX', ver:ver, triple:'$arch-apple-darwin', arch:arch };
+				{ name:'MacOSX', ver:ver, triple:'$arch-apple-darwin', arch:arch, sysroot:null };
 
 			case _:
 				throw 'Unrecognized SDK: $sdk . Valid values are: `ios`,`mac` and `windows`';
@@ -289,7 +298,11 @@ class Main extends Cli
 		if (ret.ver == null)
 		{
 			ret.ver = getDefaultVer(ret.name);
-		} else if (!exists('$prefix/share/${ret.name}${ret.ver}.sdk')) {
+		}
+
+		ret.sysroot = '$prefix/share/${ret.name}${ret.ver}.sdk';
+		if (!exists(ret.sysroot))
+		{
 			var ver = Std.parseFloat(ret.ver);
 			if (Math.isNaN(ver))
 			{
@@ -309,11 +322,12 @@ class Main extends Cli
 						}
 					}
 				}
-				ret.ver = best;
+				if (best != null)
+					ret.sysroot = '$prefix/share/${ret.name}$best.sdk';
 			}
 		}
 
-		if (ret.ver == null)
+		if (!exists(ret.sysroot))
 		{
 			warn('No installed SDK was found for ${ret.name}! Please install one with `hxcross --install-sdk`');
 			Sys.exit(5);

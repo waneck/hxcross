@@ -35,6 +35,18 @@ class Cli extends mcli.CommandLine
 	 **/
 	public var quiet:Bool;
 
+	private var curTmp:Null<String>;
+
+	@:skip public var tools(default,null):Tools;
+	@:skip public var clang(default,null):apps.Clang;
+
+	public function new()
+	{
+		super();
+		this.tools = new Tools(this);
+		this.clang = new apps.Clang(this);
+	}
+
 	@:skip public function ask(txt:String, ?defaultOption:Bool):Bool
 	{
 		if (yes) return true;
@@ -72,12 +84,12 @@ class Cli extends mcli.CommandLine
 
 	@:skip public function errln(v:Dynamic)
 	{
-		if (!quiet) Sys.stderr().writeString('$v\n');
+		if (!quiet) Sys.stderr().writeString('ERR: $v\n');
 	}
 
 	@:skip public function errlog(v:Dynamic)
 	{
-		if (verbose) Sys.stderr().writeString('$v\n');
+		if (verbose) Sys.stderr().writeString('ERRLOG: $v\n');
 	}
 
 	@:skip public function msg(v:Dynamic)
@@ -117,6 +129,7 @@ class Cli extends mcli.CommandLine
 		}
 
 		proc.stderr.close();
+		var ended = new Lock();
 		var stderr = Thread.create(function() {
 			var input = proc.stderr;
 			try
@@ -130,6 +143,7 @@ class Cli extends mcli.CommandLine
 				}
 			}
 			catch(e:haxe.io.Eof) {}
+			ended.release();
 		});
 
 		var input = proc.stdout;
@@ -146,6 +160,7 @@ class Cli extends mcli.CommandLine
 		catch(e:haxe.io.Eof) {}
 
 		var id = proc.exitCode();
+		ended.wait();
 		var localOut = new StringBuf();
 
 		try { proc.stdout.close(); } catch(e:Dynamic) {}
@@ -163,31 +178,41 @@ class Cli extends mcli.CommandLine
 
 	@:skip public function tmpdir()
 	{
+		var tmpdir = curTmp == null ? Sys.getEnv("TMPDIR") : curTmp;
+		var ret = null;
 		// first option
-		var ret = if (Sys.getEnv("TMPDIR") == null)
+		var cmd = if (tmpdir == null)
 			{
 				call('mktemp',['-d']);
 			} else {
-				call('mktemp',['-d','--tmpdir=${Sys.getEnv("TMPDIR")}']);
+				call('mktemp',['-d','--tmpdir=$tmpdir']);
 			};
-		if (ret.exit == 0)
+		if (cmd.exit == 0)
 		{
-			return ret.out.trim();
+			ret = cmd.out.trim();
+		} else {
+			if (tmpdir == null)
+				tmpdir = Sys.getEnv("TMP");
+			if (tmpdir == null)
+				tmpdir = Sys.getEnv("TEMP");
+			if (tmpdir == null)
+				tmpdir = '/tmp';
+
+			do
+			{
+				ret = '$tmpdir/tmpf${Std.random(10000)}_${Std.random(10000)}';
+			} while(exists(ret));
+
+			createDirectory(ret);
 		}
-		var dirname = Sys.getEnv("TMP");
-		if (dirname == null)
-			dirname = Sys.getEnv("TEMP");
-		if (dirname == null)
-			dirname = '/tmp';
 
-		var ret = null;
-		do
+		if (this.curTmp == null)
 		{
-			ret = '$dirname/tmpf${Std.random(10000)}_${Std.random(10000)}';
-		} while(exists(ret));
-
-		createDirectory(ret);
-		return ret;
+			this.curTmp = ret;
+			return this.tmpdir();
+		} else {
+			return ret;
+		}
 	}
 
 }
