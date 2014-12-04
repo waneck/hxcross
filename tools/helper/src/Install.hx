@@ -2,12 +2,10 @@
 class Install extends mcli.CommandLine
 {
 	private var cli:Cli;
-	private var tools:Tools;
 	public function new(cli, tools)
 	{
 		super();
 		this.cli = cli;
-		this.tools = tools;
 	}
 
 	/**
@@ -21,7 +19,10 @@ class Install extends mcli.CommandLine
 			Sys.exit(3);
 		}
 
-		var clangVer = tools.clangVersion();
+		var tools = cli.tools;
+		tools.checkExec('clang',['default' => 'clang']);
+
+		var clangVer = cli.tools.clangVersion();
 		if (clangVer == null)
 		{
 			cli.warn('No clang version was detected! This installation may fail');

@@ -31,7 +31,7 @@ class Main extends Cli
 	{
 		// check
 		// clone repo ( https://github.com/tpoechtrager/cctools-port )
-		// d.dispatch(new Install(this, new Tools(this)));
+		d.dispatch(new Install(this));
 	}
 
 	/**
