@@ -31,7 +31,14 @@ class Main extends Cli
 	{
 		// check
 		// clone repo ( https://github.com/tpoechtrager/cctools-port )
-		d.dispatch(new Install(this));
+		// d.dispatch(new Install(this));
+		var header = 'fuse.h';
+		for (inc in this.clang.includes)
+		{
+			trace('$inc/$header');
+			if (exists('$inc/$header'))
+				trace('exists');
+		}
 	}
 
 	/**

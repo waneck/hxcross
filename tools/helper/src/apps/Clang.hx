@@ -26,8 +26,12 @@ class Clang
 			var regex = ~/include\/+clang\/+[^\/]+/;
 			for (i in includes)
 			{
-				if (regex.match(i))
-					return clangInclude = i;
+				var args = driverArgs;
+				for (i in 0...args.length)
+				{
+					if (args[i] == '-internal-isystem' && regex.match(args[i+1]))
+						return clangInclude = args[i+1];
+				}
 			}
 		}
 		return clangInclude;
@@ -36,7 +40,16 @@ class Clang
 	private function get_includes()
 	{
 		if (includes == null)
-			includes = getArgs('-internal-isystem');
+		{
+			var ret = [];
+			var args = driverArgs;
+			for (i in 0...args.length)
+			{
+				if (args[i].endsWith('isystem'))
+					ret.push(args[i+1]);
+			}
+			includes = ret;
+		}
 		return includes;
 	}
 

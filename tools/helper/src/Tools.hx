@@ -41,7 +41,7 @@ class Tools
 		var ret = null;
 		if (packNames != null)
 		{
-			cli.msg('The library $name is not installed. hxcross will try to install it automatically. Please follow the instructions if needed');
+			cli.msg('The package $name is not installed. hxcross will try to install it automatically. Please follow the instructions if needed');
 			var packman = packman;
 			var libs = packNames[packman.cmd];
 			if (libs == null) libs = packNames['default'];
@@ -67,8 +67,15 @@ class Tools
 		}
 	}
 
-	public function checkLib(header:String,?packs:Map<String,Array<String>>)
+	public function checkLib(name:String, header:String,?packs:Map<String,Array<String>>)
 	{
+		for (inc in cli.clang.includes)
+		{
+			if (exists('$inc/$header'))
+				return;
+		}
+		// does not exist
+		install(name,packs);
 	}
 
 	public function which(name:String)
@@ -80,7 +87,7 @@ class Tools
 	{
 		checkExec('git'); checkExec('cmake');
 		checkExec('fusermount',[ 'default' => ['fuse'] ]);
-		checkLib('fuse.h',['apt-get' => ['libfuse-dev'] ]);
+		checkLib('fuse-dev', 'fuse.h',['apt-get' => ['libfuse-dev'] ]);
 		var tmp = cli.tmpdir();
 		var cdir = Sys.getCwd();
 		Sys.setCwd(tmp);
