@@ -23,7 +23,15 @@ class SdkInstall
 			var dmgto = cli.tmpdir();
 			var hnd = tools.mountDmg(path, dmgto);
 			if (hnd == null) { cli.errln('Mounting $path failed. Exiting'); Sys.exit(1); }
-			handleDir(dmgto,sdkname);
+			try
+			{
+				handleDir(dmgto,sdkname);
+			}
+			catch(e:Dynamic)
+			{
+				tools.unmountDmg(hnd,dmgto);
+				cpp.Lib.rethrow(e);
+			}
 			if (!tools.unmountDmg(hnd,dmgto)) cli.warn('Cannot unmount DMG at $dmgto');
 		}
 	}
@@ -32,9 +40,11 @@ class SdkInstall
 	{
 		if (path.endsWith('.sdk'))
 		{
-			addSdk(path,sdkname != null ? sdkname : haxe.io.Path.withoutDirectory(path), false);
+			if (!addSdk(path,sdkname != null ? sdkname : haxe.io.Path.withoutDirectory(path), false))
+				cli.errln("SDK add couldn't be completed successfuly");
 		}
 
+		var found = false;
 		var regex = ~/Xcode[^\.]*\.app/;
 		for (d in readDirectory(path))
 		{
@@ -42,7 +52,6 @@ class SdkInstall
 			{
 				///mnt/Xcode-Beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk/
 				var platf = '$path/$d/Contents/Developer/Platforms';
-				trace(exists(platf));
 				if (exists(platf)) for (platform in readDirectory(platf))
 				{
 					var platf = '$platf/$platform';
@@ -59,22 +68,33 @@ class SdkInstall
 						if (isDirectory('$dir/$sdk') && sdk.endsWith('.sdk'))
 						{
 							sdks.push(sdk);
+							found = true;
 						}
 					}
 					if (links.length == 1 && sdks.length == 1)
 					{
-						addSdk('$dir/${sdks[0]}',links[0],true);
+						if (!addSdk('$dir/${sdks[0]}',links[0],true))
+							cli.errln("SDK add couldn't be completed successfuly");
+						found = true;
 					} else {
 						for (sdk in sdks)
-							addSdk('$dir/$sdk',sdk,true);
+							if (!addSdk('$dir/$sdk',sdk,true))
+								cli.errln("SDK add couldn't be completed successfuly");
+						found = true;
 					}
 				}
 			}
 		}
+		if (!found) cli.warn('Could not find any SDK.');
 	}
 
 	private function addSdk(path:String,name:String,ask:Bool)
 	{
+		if (exists('$path/usr/include/stdio.h') && stat('$path/usr/include/stdio.h').size == 0)
+		{
+			cli.warn('This DMG cannot be correctly mounted on Linux. You will either need a Mac to mount the DMG and copy its files, or try using darling-dmg if you aren\'t already');
+			throw "Aborted";
+		}
 		if (ask && !cli.ask('Install SDK $name?',true))
 			return true;
 		var prefix = Main.prefix;

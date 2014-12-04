@@ -85,6 +85,15 @@ class Cli extends mcli.CommandLine
 		if (!quiet) Sys.println(v);
 	}
 
+	@:skip public function echoCall(cmd:String, args:Array<String>):Int
+	{
+		this.msg('$cmd ${args.join(" ")}');
+		if (quiet)
+			return call(cmd,args).exit;
+		else
+			return Sys.command(cmd,args);
+	}
+
 	@:skip public function call(cmd:String, args:Array<String>):{ out:String, exit:Int }
 	{
 		log('-> CALL ' + cmd + ' ' + args.join(' '));
@@ -97,7 +106,6 @@ class Cli extends mcli.CommandLine
 		{
 			if (!writing.wait())
 			{
-				trace('kill');
 				proc.kill();
 				return false;
 			} else {
@@ -181,4 +189,5 @@ class Cli extends mcli.CommandLine
 		createDirectory(ret);
 		return ret;
 	}
+
 }

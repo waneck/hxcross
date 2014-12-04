@@ -15,6 +15,7 @@ class Main extends Cli
 {
 	static function main()
 	{
+		Sys.putEnv('PATH',Sys.getEnv('PATH') + ":$prefix/bin");
 		var args = Sys.args();
 		new mcli.Dispatch(args).dispatch(new Main());
 	}
@@ -40,25 +41,47 @@ class Main extends Cli
 			triple = info.triple;
 		var args = d.args.splice(0,d.args.length);
 		args.reverse();
-		switch (args[0])
+		var add = [];
+		var cmd = args.shift();
+
+		switch (cmd)
+		{
+			case 'clang' | 'clang++' | 'ld':
+				if (args.indexOf('-arch') < 0 && info.arch != '' && info.arch != 'arm')
+				{
+					add.push('-arch');
+					add.push(info.arch);
+				}
+
+				if (verbose && args.indexOf('-v') < 0)
+				{
+					add.push('-v');
+				}
+		}
+		switch (cmd)
+		{
+			case 'ld':
+				if (args.indexOf('-syslibroot') < 0)
+				{
+					add.push('-syslibroot');
+					add.push('$prefix/share/${info.name}${info.ver}.sdk');
+				}
+				if (args.indexOf('-lstdc++') < 0)
+					add.push('-lstdc++');
+				if (args.indexOf('-lSystem') < 0)
+					add.push('-lSystem');
+		}
+		switch (cmd)
 		{
 			case null:
 
 				Sys.stderr().writeString('hxcross run: Missing argument\n');
 				Sys.exit(3);
 			case 'clang' | 'clang++':
-				var cmd = args.shift();
-				var add = [];
 				if (args.indexOf('-isysroot') < 0)
 				{
 					add.push('-isysroot');
 					add.push('$prefix/share/${info.name}${info.ver}.sdk');
-				}
-
-				if (args.indexOf('-arch') < 0 && info.arch != '' && info.arch != 'arm')
-				{
-					add.push('-arch');
-					add.push(info.arch);
 				}
 
 				if (args.indexOf('-target') < 0)
@@ -74,11 +97,6 @@ class Main extends Cli
 					{
 						add.push('-mlinker-version=${linkerver.out.trim().split("\n")[0]}');
 					}
-				}
-
-				if (verbose && args.indexOf('-v') < 0)
-				{
-					add.push('-v');
 				}
 
 				var clangLocation = this.call('which',['clang']);
@@ -98,25 +116,6 @@ class Main extends Cli
 					}
 				}
 
-				var txt = '';
-				if (info.name == 'MacOSX' && Sys.getEnv('MACOSX_DEPLOYMENT_TARGET') == null)
-				{
-					Sys.putEnv('MACOSX_DEPLOYMENT_TARGET',info.ver + '');
-					txt = 'MACOSX_DEPLOYMENT_TARGET=${info.ver} ';
-				} else if (Sys.getEnv('IPHONEOS_DEPLOYMENT_TARGET') == null) {
-					Sys.putEnv('IPHONEOS_DEPLOYMENT_TARGET',info.ver+'');
-					txt = 'IPHONEOS_DEPLOYMENT_TARGET=${info.ver} ';
-				}
-
-				log('$txt$cmd ${add.join(" ")} ${args.join(" ")}');
-				// if (quiet)
-				{
-					//TODO
-					// var ret =
-				// } else {
-					Sys.exit(Sys.command(cmd,add.concat(args)));
-				}
-
 			case 'ar' | 'as' | 'strip' | 'ranlib'
 				| 'checksyms' | 'codesign_allocate' | 'dyldinfo'
 				| 'gdb' | 'indr' | 'install_name_tool'
@@ -125,12 +124,24 @@ class Main extends Cli
 				| 'pagestuff' | 'redo_prebinding' | 'seg_addr_table'
 				| 'segedit' | 'seg_hack' | 'size' | 'strings' | 'unwinddump':
 
-				log('$triple-${args.join(" ")}');
-				Sys.exit(Sys.command(triple + '-' + args.shift(),args));
+				cmd = triple+'-'+cmd;
 			case _:
 				log(args.join(" "));
-				Sys.exit(Sys.command(args.shift(),args));
 		}
+
+		var txt = '';
+		if (info.name == 'MacOSX' && Sys.getEnv('MACOSX_DEPLOYMENT_TARGET') == null)
+		{
+			Sys.putEnv('MACOSX_DEPLOYMENT_TARGET',info.ver + '');
+			txt = 'MACOSX_DEPLOYMENT_TARGET=${info.ver} ';
+		} else if (Sys.getEnv('IPHONEOS_DEPLOYMENT_TARGET') == null) {
+			Sys.putEnv('IPHONEOS_DEPLOYMENT_TARGET',info.ver+'');
+			txt = 'IPHONEOS_DEPLOYMENT_TARGET=${info.ver} ';
+		}
+		if (add.length > 0)
+			args = args.concat(add);
+		log('$txt$cmd ${args.join(" ")}');
+		Sys.exit(Sys.command(cmd,args));
 	}
 
 
@@ -329,7 +340,7 @@ class Main extends Cli
 				14;
 		};
 		var found = false;
-		for (val in ['',darwinVer+''])
+		for (val in [darwinVer+'',''])
 		{
 			if (this.cbool('which',[ret.triple+val+'-ar']))
 			{
