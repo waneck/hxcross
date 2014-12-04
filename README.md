@@ -148,3 +148,9 @@ $ ./cpp/Main
 You should get a warm hello from Linux!
 
 Please pay attention to the sdk version you're compiling to - you can never use a SDK that is newer than the SDK on your device.
+
+
+## Contributing
+
+This is a proof-of-concept and needs some work to actually become a good alternative to iOs development. Its architecture is still
+very unstable, and I'd be happy to discuss changing it. If you're interested in helping, this project needs it :)
