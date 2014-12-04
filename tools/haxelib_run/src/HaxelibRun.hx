@@ -47,7 +47,30 @@ class HaxelibRun extends mcli.CommandLine
 		if (res != 0) Sys.exit(res);
 
 		// install hxcross
-		if (Sys.command('../scripts/do_with_dir.sh',['$prefix/bin','cp','bin/Main-debug','$prefix/bin/hxcross']) != 0) Sys.exit(1);
+		var needsSudo = false;
+		var root = prefix;
+		while (!exists(root))
+		{
+			root = haxe.io.Path.directory(root);
+		}
+		if (root == '' || root == '.') throw 'Invalid prefix directory!';
+
+		needsSudo = stat(root).uid == 0;
+
+		var ret = false;
+		if (needsSudo)
+		{
+			ret = Sys.command('sudo',['mkdir','-p','$prefix/bin']) == 0 &&
+				Sys.command('sudo',['cp','bin/Main-debug','$prefix/bin/hxcross']) == 0;
+		} else {
+			ret = Sys.command('mkdir',['-p','$prefix/bin']) == 0 &&
+				Sys.command('cp',['bin/Main-debug','$prefix/bin/hxcross']) == 0;
+		}
+		if (!ret)
+		{
+			Sys.stderr().writeString('Setup failed\n');
+			Sys.exit(1);
+		}
 		Sys.println("Setup complete!");
 	}
 }

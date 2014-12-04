@@ -22,7 +22,7 @@ class Tools
 			} else if (exists('/etc/redhat-release')) { //yum
 				packman = { cmd: 'yum', instargs:['install'] };
 			} else if (exists('/etc/arch-release')) { //pacman
-				packman = { cmd: 'pacman', instargs:['-S'] };
+				packman = { cmd: 'pacman', instargs:['-S','--noconfirm'] };
 			} else if (exists('/etc/gentoo-release')) { //emerge
 				packman = { cmd: 'emerge', instargs:[] };
 			} else if (exists('/etc/SuSE-release')) { //zypp
@@ -45,7 +45,7 @@ class Tools
 			var packman = packman;
 			var libs = packNames[packman.cmd];
 			if (libs == null) libs = packNames['default'];
-			if (libs != null) ret = cli.call('sudo',[packman.cmd].concat(packman.instargs).concat(libs));
+			if (libs != null) ret = cli.call('sudo',[packman.cmd].concat(packman.instargs).concat(libs),true);
 		}
 		if (ret != null && ret.exit == 0)
 			return;
@@ -87,7 +87,9 @@ class Tools
 	{
 		checkExec('git'); checkExec('cmake');
 		checkExec('fusermount',[ 'default' => ['fuse'] ]);
-		checkLib('fuse-dev', 'fuse.h',['apt-get' => ['libfuse-dev'] ]);
+		checkLib('fuse-dev', 'fuse.h',['default' => ['libfuse-dev'] ]);
+		checkLib('bz2-dev', 'bzlib.h',['default' => ['libbz2-dev'] ]);
+
 		var tmp = cli.tmpdir();
 		var cdir = Sys.getCwd();
 		Sys.setCwd(tmp);

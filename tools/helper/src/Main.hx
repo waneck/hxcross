@@ -31,14 +31,16 @@ class Main extends Cli
 	{
 		// check
 		// clone repo ( https://github.com/tpoechtrager/cctools-port )
-		// d.dispatch(new Install(this));
-		var header = 'fuse.h';
-		for (inc in this.clang.includes)
-		{
-			trace('$inc/$header');
-			if (exists('$inc/$header'))
-				trace('exists');
-		}
+		d.dispatch(new Install(this));
+	}
+
+	private function getSdk()
+	{
+		if (sdk == null)
+			sdk = Sys.getEnv('HXCROSS_SDK');
+		if (sdk == null)
+			sdk = 'ios';
+		return sdk;
 	}
 
 	/**
@@ -46,7 +48,7 @@ class Main extends Cli
 	 **/
 	public function run(d:mcli.Dispatch)
 	{
-		var info = sdkInfo(sdk),
+		var info = sdkInfo(getSdk()),
 			triple = info.triple;
 		var args = d.args.splice(0,d.args.length);
 		args.reverse();
@@ -165,7 +167,7 @@ class Main extends Cli
 		Sets the Mac/iOs SDK to use.
 		@more Examples of valid values are `iphone4.2`, `ios7`, `mac10.8-i386`, `osx10.9-x86_64`, `mingw-i386`
 	 **/
-	public var sdk:String = "ios";
+	public var sdk:String = null;
 
 	/**
 		Lists all currently installed SDKs

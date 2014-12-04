@@ -11,12 +11,18 @@ class Clang
 	@:isVar public var path(get,null):String;
 	@:isVar public var clangInclude(get,null):String;
 	@:isVar public var includes(get,null):Array<String>;
+	@:isVar public var prefix(get,null):String;
 
 	@:isVar private var driverArgs(get,null):Array<String>;
 
 	public function new(cli)
 	{
 		this.cli = cli;
+	}
+
+	private function get_prefix():String
+	{
+		return haxe.io.Path.directory(path) + '/..';
 	}
 
 	private function get_clangInclude()
@@ -87,7 +93,7 @@ class Clang
 		if (out.exit != 0)
 		{
 			cli.errlog('clang -### failed. Trying to infer some clang paths');
-			var location = this.path;
+			var location = haxe.io.Path.directory(this.path);
 			var include = '$location/../include/clang';
 			if (!exists(include)) include = '/usr/include/clang';
 			if (exists(include))

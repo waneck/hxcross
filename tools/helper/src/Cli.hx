@@ -106,8 +106,12 @@ class Cli extends mcli.CommandLine
 			return Sys.command(cmd,args);
 	}
 
-	@:skip public function call(cmd:String, args:Array<String>):{ out:String, exit:Int }
+	@:skip public function call(cmd:String, args:Array<String>,echo=false):{ out:String, exit:Int }
 	{
+		inline function log(msg:String)
+		{
+			if (echo) this.msg(msg); else this.log(msg);
+		}
 		log('-> CALL ' + cmd + ' ' + args.join(' '));
 
 		var out = new StringBuf();
@@ -171,9 +175,9 @@ class Cli extends mcli.CommandLine
 		return { out:out.toString(), exit: id };
 	}
 
-	@:skip public function cbool(cmd:String, args:Array<String>):Bool
+	@:skip public function cbool(cmd:String, args:Array<String>,?echo=false):Bool
 	{
-		return call(cmd,args).exit == 0;
+		return call(cmd,args,echo).exit == 0;
 	}
 
 	@:skip public function tmpdir()
