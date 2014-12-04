@@ -83,7 +83,7 @@ class Main extends Cli
 				if (args.indexOf('-isysroot') < 0)
 				{
 					add.push('-isysroot');
-					add.push('$prefix/share/${info.name}${info.ver}.sdk');
+					add.push(info.sysroot);
 				}
 
 				if (args.indexOf('-target') < 0)
@@ -102,7 +102,7 @@ class Main extends Cli
 				}
 
 				add.push('-I');
-				add.push(this.clang.clangInclude + '/include');
+				add.push(this.clang.clangInclude);
 				// var clangLocation = this.call('which',['clang']);
 				// if (clangLocation.exit == 0)
 				// {
