@@ -1,3 +1,5 @@
 *.swp
 *.swo
 bin
+tools/helper/hxcross.n
+tools/helper/hxcross

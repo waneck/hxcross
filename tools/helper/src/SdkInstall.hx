@@ -1,4 +1,9 @@
 import sys.FileSystem.*;
+#if neko
+import neko.Lib;
+#elseif cpp
+import cpp.Lib;
+#end
 
 using StringTools;
 
@@ -30,7 +35,7 @@ class SdkInstall
 			catch(e:Dynamic)
 			{
 				tools.unmountDmg(hnd,dmgto);
-				cpp.Lib.rethrow(e);
+				Lib.rethrow(e);
 			}
 			if (!tools.unmountDmg(hnd,dmgto)) cli.warn('Cannot unmount DMG at $dmgto');
 		}

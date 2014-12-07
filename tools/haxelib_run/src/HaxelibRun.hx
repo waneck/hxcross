@@ -61,10 +61,10 @@ class HaxelibRun extends mcli.CommandLine
 		if (needsSudo)
 		{
 			ret = Sys.command('sudo',['mkdir','-p','$prefix/bin']) == 0 &&
-				Sys.command('sudo',['cp','bin/Main-debug','$prefix/bin/hxcross']) == 0;
+				Sys.command('sudo',['cp','hxcross','$prefix/bin/hxcross']) == 0;
 		} else {
 			ret = Sys.command('mkdir',['-p','$prefix/bin']) == 0 &&
-				Sys.command('cp',['bin/Main-debug','$prefix/bin/hxcross']) == 0;
+				Sys.command('cp',['hxcross','$prefix/bin/hxcross']) == 0;
 		}
 		if (!ret)
 		{

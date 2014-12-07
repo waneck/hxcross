@@ -1,7 +1,8 @@
 -cp src
--cpp bin
+#-cpp bin
+-neko hxcross.n
 -lib mcli
--lib hxcpp
 -main Main
--D HXCPP_M64
 -debug
+
+-cmd nekotools boot hxcross.n
