@@ -9,7 +9,7 @@ class Clang
 	@:isVar public var searchPaths(get,null):{ programs:Array<String>, libraries:Array<String> };
 	@:isVar public var version(get,null):String;
 	@:isVar public var path(get,null):String;
-	@:isVar public var clangInclude(get,null):String;
+	@:isVar public var clangIncludes(get,null):Array<String>;
 	@:isVar public var includes(get,null):Array<String>;
 	@:isVar public var prefix(get,null):String;
 
@@ -25,22 +25,25 @@ class Clang
 		return haxe.io.Path.directory(path) + '/..';
 	}
 
-	private function get_clangInclude()
+	private function get_clangIncludes()
 	{
-		if (clangInclude == null)
+		if (clangIncludes == null)
 		{
-			var regex = ~/include\/+clang\/+[^\/]+/;
+			var ret = clangIncludes = [];
 			for (i in includes)
 			{
 				var args = driverArgs;
 				for (i in 0...args.length)
 				{
-					if (args[i] == '-internal-isystem' && regex.match(args[i+1]))
-						return clangInclude = args[i+1];
+					if (args[i] == '-internal-isystem')
+					{
+						if ( exists(args[i+1] + '/stdarg.h') )
+							ret.push(args[i+1]);
+					}
 				}
 			}
 		}
-		return clangInclude;
+		return clangIncludes;
 	}
 
 	private function get_includes()

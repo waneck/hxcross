@@ -110,8 +110,11 @@ class Main extends Cli
 					}
 				}
 
-				add.push('-I');
-				add.push(this.clang.clangInclude);
+				for (inc in this.clang.clangIncludes)
+				{
+					add.push('-I');
+					add.push(inc);
+				}
 				// var clangLocation = this.call('which',['clang']);
 				// if (clangLocation.exit == 0)
 				// {
