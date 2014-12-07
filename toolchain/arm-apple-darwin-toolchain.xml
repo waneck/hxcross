@@ -1,7 +1,7 @@
 <xml>
 
 <echo value="Using cross-ios SDK ${IPHONE_VER}" if="VERBOSE"/>
-<set name="HXCPP_ARM64" if="HXCPP_M64" />
+<set name="HXCPP_ARM64" value="1" if="HXCPP_M64" />
 
 <set name="ARCH" value ="armv7" if="HXCPP_ARMV7" />
 <set name="ARCH" value ="armv7s" if="HXCPP_ARMV7S" />
@@ -21,8 +21,8 @@
 <set name="ARCH_EXTRA" value="" />
 
 <section if="mac-target">
-	<set name="ARCH_EXTRA" value ="-i386" />
-	<set name="ARCH_EXTRA" value ="-x86_64" if="HXCPP_M64" />
+	<set name="ARCH_EXTRA" value="-i386" />
+	<set name="ARCH_EXTRA" value="-x86_64" if="HXCPP_M64" />
 </section>
 
 <set name="SDK_VER" value="${IPHONE_VER}" unless="mac-target" />
