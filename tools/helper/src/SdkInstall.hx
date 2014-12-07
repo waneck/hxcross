@@ -107,9 +107,9 @@ class SdkInstall
 		inline function call(cmd,args):Bool
 		{
 			return if (needsSudo)
-				cli.cbool('sudo',[cmd].concat(args));
+				cli.cbool('sudo',[cmd].concat(args), true);
 			else
-				cli.cbool(cmd,args);
+				cli.cbool(cmd,args, true);
 		}
 
 		var dir = '$prefix/share';
@@ -122,7 +122,15 @@ class SdkInstall
 			else
 				return true;
 
-		call('cp',['-rf','$path','$prefix/share/$name']) || return false;
+		call('cp',['-rf','$path','$prefix/share/$name']) || {
+			if ( exists('$prefix/share/$name') )
+			{
+				cli.warn('The copy reportedly failed. Some minor I/O issues with the dmg mounter however can happen which can lead to `cp` reporting a failure. Trying to use the SDK is advised');
+				return true;
+			} else {
+				return false;
+			}
+		}
 		cli.log('Succesfully installed SDK $name');
 		return true;
 	}
