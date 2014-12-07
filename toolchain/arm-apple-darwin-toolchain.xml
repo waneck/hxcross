@@ -5,7 +5,6 @@
 
 <set name="ARCH" value ="armv7" if="HXCPP_ARMV7" />
 <set name="ARCH" value ="armv7s" if="HXCPP_ARMV7S" />
-<set name="ARCH" value ="arm64" if="HXCPP_ARM64" />
 
 <set name="HXCPP_USE_LIBTOOL" value="1" />
 
@@ -23,6 +22,10 @@
 <section if="mac-target">
 	<set name="ARCH_EXTRA" value="-i386" />
 	<set name="ARCH_EXTRA" value="-x86_64" if="HXCPP_M64" />
+</section>
+
+<section unless="mac-target">
+	<set name="ARCH" value ="arm64" if="HXCPP_ARM64" />
 </section>
 
 <set name="SDK_VER" value="${IPHONE_VER}" unless="mac-target" />
