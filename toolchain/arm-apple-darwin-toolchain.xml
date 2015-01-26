@@ -52,6 +52,7 @@
 	<set name="HXCPP_AR" value="hxcross ${VERBOSE_FLAG}--sdk ${SDK_TARGET}${SDK_VER}${ARCH_EXTRA} run ar" unless="HXCPP_AR" />
 	<set name="HXCPP_RANLIB" value="hxcross ${VERBOSE_FLAG}--sdk ${SDK_TARGET}${SDK_VER}${ARCH_EXTRA} run ranlib" unless="HXCPP_RANLIB" />
 	<set name="HXCPP_LD" value="hxcross ${VERBOSE_FLAG}--sdk ${SDK_TARGET}${SDK_VER}${ARCH_EXTRA} run ld" unless="HXCPP_LD" />
+	<set name="HXCPP_LIBTOOL" value="hxcross ${VERBOSE_FLAG}--sdk ${SDK_TARGET}${SDK_VER}${ARCH_EXTRA} run libtool" unless="HXCPP_LIBTOOL" />
 </section>
 
 <include name="toolchain/gcc-toolchain.xml"/>
