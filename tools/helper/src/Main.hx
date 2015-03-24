@@ -48,6 +48,7 @@ class Main extends Cli
 	 **/
 	public function run(d:mcli.Dispatch)
 	{
+		var isMac = Sys.systemName() == "Mac";
 		var info = sdkInfo(getSdk()),
 			triple = info.triple;
 		var args = d.args.splice(0,d.args.length);
@@ -75,7 +76,8 @@ class Main extends Cli
 				if (args.indexOf('-syslibroot') < 0)
 				{
 					add.push('-syslibroot');
-					add.push('$prefix/share/${info.name}${info.ver}.sdk');
+					add.push(info.sysroot);
+					// add.push('$prefix/share/${info.name}${info.ver}.sdk');
 				}
 				if (args.indexOf('-lstdc++') < 0)
 					add.push('-lstdc++');
@@ -103,17 +105,31 @@ class Main extends Cli
 
 				if (args.indexOf('-mlinker-version') < 0)
 				{
-					var linkerver = this.call('$triple-ld',['-v']);
+					var linkerver = if (isMac)
+						this.call('xcrun',['--sdk',info.xcrunName,'ld','-v']);
+					else
+						this.call('$triple-ld',['-v']);
+
+					var regex = ~/ld64\-([0-9\.]+)/;
 					if (linkerver.exit == 0)
 					{
-						add.push('-mlinker-version=${linkerver.out.trim().split("\n")[0]}');
+						if (regex.match(linkerver.out))
+							add.push('-mlinker-version=${regex.matched(1)}');
+						else {
+							var ver = linkerver.out.trim().split("\n")[0].trim();
+							if (Std.parseFloat(ver) + '' == ver)
+								add.push('-mlinker-version=$ver');
+						}
 					}
 				}
 
-				for (inc in this.clang.clangIncludes)
+				if (!isMac)
 				{
-					add.push('-I');
-					add.push(inc);
+					for (inc in this.clang.clangIncludes)
+					{
+						add.push('-I');
+						add.push(inc);
+					}
 				}
 				// var clangLocation = this.call('which',['clang']);
 				// if (clangLocation.exit == 0)
@@ -145,24 +161,33 @@ class Main extends Cli
 				| 'pagestuff' | 'redo_prebinding' | 'seg_addr_table'
 				| 'segedit' | 'seg_hack' | 'size' | 'strings' | 'unwinddump':
 
-				cmd = triple+'-'+cmd;
+				if (!isMac)
+					cmd = triple+'-'+cmd;
 			case _:
-				log(args.join(" "));
 		}
 
 		var txt = '';
-		if (info.name == 'MacOSX' && Sys.getEnv('MACOSX_DEPLOYMENT_TARGET') == null)
+		if (info.ver != null)
 		{
-			Sys.putEnv('MACOSX_DEPLOYMENT_TARGET',info.ver + '');
-			txt = 'MACOSX_DEPLOYMENT_TARGET=${info.ver} ';
-		} else if (Sys.getEnv('IPHONEOS_DEPLOYMENT_TARGET') == null) {
-			Sys.putEnv('IPHONEOS_DEPLOYMENT_TARGET',info.ver+'');
-			txt = 'IPHONEOS_DEPLOYMENT_TARGET=${info.ver} ';
+			if (info.name == 'MacOSX' && Sys.getEnv('MACOSX_DEPLOYMENT_TARGET') == null)
+			{
+				Sys.putEnv('MACOSX_DEPLOYMENT_TARGET',info.ver + '');
+				txt = 'MACOSX_DEPLOYMENT_TARGET=${info.ver} ';
+			} else if (Sys.getEnv('IPHONEOS_DEPLOYMENT_TARGET') == null) {
+				Sys.putEnv('IPHONEOS_DEPLOYMENT_TARGET',info.ver+'');
+				txt = 'IPHONEOS_DEPLOYMENT_TARGET=${info.ver} ';
+			}
 		}
 		if (add.length > 0)
 			args = args.concat(add);
-		log('$txt$cmd ${args.join(" ")}');
-		Sys.exit(Sys.command(cmd,args));
+		if (isMac)
+		{
+			log('${txt}xcrun --sdk ${info.xcrunName} $cmd ${args.join(" ")}');
+			Sys.exit(Sys.command("xcrun",["--sdk",info.xcrunName,cmd].concat(args)));
+		} else {
+			log('$txt$cmd ${args.join(" ")}');
+			Sys.exit(Sys.command(cmd,args));
+		}
 	}
 
 
@@ -246,6 +271,7 @@ class Main extends Cli
 			ver = null;
 
 		var arch = regex.matched(3);
+		var xcrunName = null;
 
 		var ret = switch(regex.matched(1))
 		{
@@ -272,7 +298,13 @@ class Main extends Cli
 					if (env != null)
 						ver = env;
 				}
-				{ name:'iPhoneOS', ver:ver, triple:'$archTriple-apple-darwin', arch:arch, sysroot:null };
+				if (ver == null)
+				{
+					xcrunName = "iphoneos";
+				} else {
+					xcrunName = "iphoneos" + ver;
+				}
+				{ name:'iPhoneOS', ver:ver, triple:'$archTriple-apple-darwin', arch:arch, sysroot:null, xcrunName: xcrunName };
 
 			case 'iphonesimulator' | 'iphonesim':
 				if (ver == null)
@@ -281,7 +313,14 @@ class Main extends Cli
 					if (env != null)
 						ver = env;
 				}
-				{ name:'iPhoneSimulator', ver:ver, triple:'i386-apple-darwin', arch:arch, sysroot:null };
+
+				if (ver == null)
+				{
+					xcrunName = "iphoneos";
+				} else {
+					xcrunName = "iphoneos" + ver;
+				}
+				{ name:'iPhoneSimulator', ver:ver, triple:'i386-apple-darwin', arch:arch, sysroot:null, xcrunName: xcrunName };
 
 			case 'mac' | 'osx' | 'macos' | 'macosx':
 				if (arch == null || arch == '')
@@ -301,7 +340,14 @@ class Main extends Cli
 					if (env != null)
 						ver = env;
 				}
-				{ name:'MacOSX', ver:ver, triple:'$arch-apple-darwin', arch:arch, sysroot:null };
+
+				if (ver == null)
+				{
+					xcrunName = "macosx";
+				} else {
+					xcrunName = "macosx" + ver;
+				}
+				{ name:'MacOSX', ver:ver, triple:'$arch-apple-darwin', arch:arch, sysroot:null, xcrunName:xcrunName };
 
 			case _:
 				throw 'Unrecognized SDK: $sdk . Valid values are: `ios`,`mac` and `windows`';
@@ -312,30 +358,45 @@ class Main extends Cli
 			ret.ver = getDefaultVer(ret.name);
 		}
 
-		ret.sysroot = '$prefix/share/${ret.name}${ret.ver}.sdk';
-		if (!exists(ret.sysroot))
+		if (Sys.systemName() == "Mac")
 		{
-			var ver = Std.parseFloat(ret.ver);
-			if (Math.isNaN(ver))
+			var cret = this.call('xcrun',["--sdk", xcrunName, "--show-sdk-path"]);
+			if (cret.exit == 0)
 			{
-				ret.ver = getDefaultVer(ret.name);
+				ret.sysroot = cret.out.trim();
 			} else {
-				var best = null,
-					bestVer = Math.POSITIVE_INFINITY;
-				for (sdk in getSdks())
+				errln("Cannot run xcrun:");
+				errln(cret.out);
+				Sys.exit(cret.exit);
+			}
+		} else {
+			ret.sysroot = '$prefix/share/${ret.name}${ret.ver}.sdk';
+			if (!exists(ret.sysroot))
+			{
+				var ver = Std.parseFloat(ret.ver);
+				if (Math.isNaN(ver))
 				{
-					if (sdk.startsWith(ret.name))
+					ret.ver = getDefaultVer(ret.name);
+				} else {
+					var best = null,
+						bestVer = Math.POSITIVE_INFINITY;
+					for (sdk in getSdks())
 					{
-						var v = Std.parseFloat(sdk.substr(ret.name.length));
-						if (v >= ver && v < bestVer)
+						if (sdk.startsWith(ret.name))
 						{
-							best = sdk.substr(ret.name.length);
-							bestVer = v;
+							var v = Std.parseFloat(sdk.substr(ret.name.length));
+							if (v >= ver && v < bestVer)
+							{
+								best = sdk.substr(ret.name.length);
+								bestVer = v;
+							}
 						}
 					}
+					if (best != null)
+					{
+							ret.sysroot = '$prefix/share/${ret.name}$best.sdk';
+					}
 				}
-				if (best != null)
-					ret.sysroot = '$prefix/share/${ret.name}$best.sdk';
 			}
 		}
 
@@ -346,40 +407,43 @@ class Main extends Cli
 		}
 
 		// check triple
-		var v = ret.ver.split('.');
-		var darwinVer = switch [ ret.name, Std.parseInt(v[0]), v[1] == null ? 0 : Std.parseInt(v[1]) ] {
-			case ['MacOSX', 10, ver] if (ver <= 7):
-				11;
-			case ['MacOSX', 10, 8]:
-				12;
-			case ['MacOSX', 10, 9]:
-				13;
-			case ['MacOSX', 10, _]:
-				14;
-			case ['iPhoneOS', ver, _] if (ver <= 5):
-				11;
-			case ['iPhoneOS', 6, _]:
-				13;
-			case ['iPhoneOS', _, _]:
-				14;
-			case _:
-				14;
-		};
-		var found = false;
-		for (val in [darwinVer+'',''])
+		if (Sys.systemName() != "Mac")
 		{
-			if (this.cbool('which',[ret.triple+val+'-ar']))
+			var v = ret.ver.split('.');
+			var darwinVer = switch [ ret.name, Std.parseInt(v[0]), v[1] == null ? 0 : Std.parseInt(v[1]) ] {
+				case ['MacOSX', 10, ver] if (ver <= 7):
+					11;
+				case ['MacOSX', 10, 8]:
+					12;
+				case ['MacOSX', 10, 9]:
+					13;
+				case ['MacOSX', 10, _]:
+					14;
+				case ['iPhoneOS', ver, _] if (ver <= 5):
+					11;
+				case ['iPhoneOS', 6, _]:
+					13;
+				case ['iPhoneOS', _, _]:
+					14;
+				case _:
+					14;
+			};
+			var found = false;
+			for (val in [darwinVer+'',''])
 			{
-				ret.triple = ret.triple + val;
-				found = true;
-				break;
+				if (this.cbool('which',[ret.triple+val+'-ar']))
+				{
+					ret.triple = ret.triple + val;
+					found = true;
+					break;
+				}
 			}
-		}
 
-		if (!found)
-		{
-			errln('Cannot find a valid binutils toolchain for ${ret.triple}. Please install it before using hxcross with this target');
-			Sys.exit(4);
+			if (!found)
+			{
+				errln('Cannot find a valid binutils toolchain for ${ret.triple}. Please install it before using hxcross with this target');
+				Sys.exit(4);
+			}
 		}
 
 		return ret;

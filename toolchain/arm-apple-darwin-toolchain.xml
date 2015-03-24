@@ -16,7 +16,7 @@
 <set name="mac-target" value="1" if="macosx" />
 
 <set name="SDK_TARGET" value="iphoneos" if="iphone-target" />
-<set name="SDK_TARGET" value="mac" if="mac-target" />
+<set name="SDK_TARGET" value="macosx" if="mac-target" />
 <set name="ARCH_EXTRA" value="" />
 
 <section if="mac-target">
